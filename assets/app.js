@@ -198,6 +198,8 @@ export async function bootstrap(active, renderFn) {
     await renderFn(catalog);
     mountFooter(catalog);
     observeReveals();
+    // Client-side cart (localStorage); loaded lazily so browsing never blocks on it.
+    import("./cart.js").then((m) => m.mountCart()).catch(() => {});
   } catch (err) {
     console.error(err);
     const main = document.querySelector("#app") || document.body;

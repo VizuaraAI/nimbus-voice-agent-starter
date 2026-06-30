@@ -3,6 +3,11 @@ import { el, tone, initials, fromPrice, param, escapeHtml, icon, catIconName } f
 
 const app = () => document.querySelector("#app");
 
+// Add-to-cart (client-side store; loaded on demand).
+function addToCartUI(productName, tier) {
+  import("./cart.js").then((m) => m.addToCart(productName, tier || null, 1)).catch((e) => console.error(e));
+}
+
 // Map a category id to a tone index so a product's tile colour matches its family.
 function catTone(catalog, categoryId) {
   const idx = (catalog.categories || []).findIndex((c) => c.id === categoryId);
@@ -314,7 +319,7 @@ export function renderProductDetail(catalog) {
   );
   side.append(el("p", { class: "muted", style: "font-size:.88rem;margin-top:.4rem" }, "Billed annually. Free tier available."));
   side.append(
-    el("a", { href: "#pricing", class: "btn btn-primary btn-block", style: "margin:.8rem 0 .5rem" }, "Get started")
+    el("button", { class: "btn btn-primary btn-block", style: "margin:.8rem 0 .5rem", onclick: () => addToCartUI(p.name) }, "Add to cart")
   );
   side.append(el("a", { href: "#pricing", class: "btn btn-ghost btn-block" }, "Compare plans"));
   if (p.addOns?.length) {
@@ -373,12 +378,14 @@ function tiersGrid(tiers, productName = null) {
   return grid;
 }
 
-// The tier call-to-action. Static site: every plan links out (no cart here).
+// The tier call-to-action: paid tiers add to the cart; free/custom keep their label.
 function tierAction(t, featured, isCustom, productName) {
   const cls = `btn ${featured ? "btn-primary" : "btn-ghost"} btn-block`;
   const isFree = t.priceMonthly === 0;
-  const label = isCustom ? "Contact sales" : isFree ? "Start free" : "Get started";
-  return el("a", { href: isCustom ? "support.html" : "#", class: cls }, label);
+  if (productName && !isCustom && !isFree) {
+    return el("button", { class: cls, onclick: () => addToCartUI(productName, t.name) }, "Add to cart");
+  }
+  return el("a", { href: isCustom ? "support.html" : "#", class: cls }, isCustom ? "Contact sales" : "Start free");
 }
 
 function relatedSection(catalog, p) {
